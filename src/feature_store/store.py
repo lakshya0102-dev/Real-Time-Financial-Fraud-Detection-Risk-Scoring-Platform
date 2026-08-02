@@ -19,8 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
-import time
-from typing import Any, Optional
+from typing import Any
 
 from src.config.settings import FeatureStoreConfig, get_settings
 
@@ -30,7 +29,7 @@ logger = logging.getLogger(__name__)
 class OnlineFeatureStore:
     """Redis-based online feature store for real-time fraud detection."""
 
-    def __init__(self, config: Optional[FeatureStoreConfig] = None) -> None:
+    def __init__(self, config: FeatureStoreConfig | None = None) -> None:
         self.config = config or get_settings().feature_store
         self._redis = None
         self._connected = False
@@ -83,7 +82,7 @@ class OnlineFeatureStore:
                 values = self._redis.mget(keys)
                 return {
                     k.replace(prefix, ""): self._deserialize(v)
-                    for k, v in zip(keys, values)
+                    for k, v in zip(keys, values, strict=False)
                     if v is not None
                 }
             except Exception as e:
@@ -101,7 +100,7 @@ class OnlineFeatureStore:
         entity_type: str,
         entity_id: str,
         features: dict[str, Any],
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
     ) -> None:
         """Update features for an entity."""
         if self._redis and self._connected:
@@ -126,7 +125,7 @@ class OnlineFeatureStore:
         entity_id: str,
         counter_name: str,
         amount: float = 1.0,
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
     ) -> float:
         """Increment a counter for an entity (e.g., txn_count_1h)."""
         key = self._key(entity_type, entity_id, counter_name)

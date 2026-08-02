@@ -13,9 +13,9 @@ feature calculations across batch training and real-time inference.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Any
 
 
 class FeatureSource(str, Enum):
@@ -51,9 +51,9 @@ class FeatureDefinition:
     description: str
     dtype: FeatureType
     source: FeatureSource
-    aggregation_window: Optional[str] = None  # e.g., "5m", "1h", "24h", "7d"
+    aggregation_window: str | None = None  # e.g., "5m", "1h", "24h", "7d"
     default_value: Any = 0
-    transformation: Optional[str] = None  # e.g., "log", "zscore", "minmax"
+    transformation: str | None = None  # e.g., "log", "zscore", "minmax"
     online_available: bool = True  # Whether computable in real-time
     requires_history: bool = False  # Whether needs historical data
     category: str = ""  # Feature group: "static", "entity", "temporal", etc.
@@ -414,13 +414,13 @@ class FeatureRegistry:
             raise KeyError(f"Feature '{name}' not found in registry")
         return self._features[name]
 
-    def list_features(self, category: Optional[str] = None) -> list[FeatureDefinition]:
+    def list_features(self, category: str | None = None) -> list[FeatureDefinition]:
         """List all features, optionally filtered by category."""
         if category:
             return [f for f in self._features.values() if f.category == category]
         return list(self._features.values())
 
-    def feature_names(self, category: Optional[str] = None) -> list[str]:
+    def feature_names(self, category: str | None = None) -> list[str]:
         """List feature names, optionally filtered by category."""
         return [f.name for f in self.list_features(category)]
 

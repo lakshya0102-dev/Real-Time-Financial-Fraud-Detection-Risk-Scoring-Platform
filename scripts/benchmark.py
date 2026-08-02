@@ -9,23 +9,21 @@ from __future__ import annotations
 
 import sys
 import time
+from contextlib import suppress
 from pathlib import Path
 
 import numpy as np
 
-# Reconfigure stdout for UTF-8 on Windows
-if hasattr(sys.stdout, "reconfigure"):
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
 from src.features.pipeline import FeatureEngineer
 from src.scoring.decision_engine import DecisionEngine
 from src.validation.leakage import LeakageValidator
+
+# Reconfigure stdout for UTF-8 on Windows
+if hasattr(sys.stdout, "reconfigure"):
+    with suppress(Exception):
+        sys.stdout.reconfigure(encoding="utf-8")
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def run_benchmark(n_iterations: int = 200, warmup_iterations: int = 10) -> None:
@@ -125,18 +123,15 @@ def run_benchmark(n_iterations: int = 200, warmup_iterations: int = 10) -> None:
         validator.validate_no_leakage_dict(sample_txn)
         feats = engineer.generate_online_features(sample_txn)
         if model is not None:
-            if feature_names:
-                fv = [feats.get(f, 0) for f in feature_names]
-            else:
-                fv = list(feats.values())
-            X = np.array([fv], dtype=np.float64)
-            X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+            fv = [feats.get(f, 0) for f in feature_names] if feature_names else list(feats.values())
+            x = np.array([fv], dtype=np.float64)
+            x = np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
             if scaler is not None:
-                X = scaler.transform(X)
-            prob = float(model.predict_proba(X)[:, 1][0])
+                x = scaler.transform(x)
+            prob = float(model.predict_proba(x)[:, 1][0])
         else:
             prob = 0.25
-        decision = decision_engine.decide(sample_txn["transaction_id"], prob)
+        decision_engine.decide(sample_txn["transaction_id"], prob)
 
     latencies_ms = []
 
@@ -151,22 +146,19 @@ def run_benchmark(n_iterations: int = 200, warmup_iterations: int = 10) -> None:
 
         # 3. Model inference (the most expensive step)
         if model is not None:
-            if feature_names:
-                fv = [feats.get(f, 0) for f in feature_names]
-            else:
-                fv = list(feats.values())
-            X = np.array([fv], dtype=np.float64)
-            X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+            fv = [feats.get(f, 0) for f in feature_names] if feature_names else list(feats.values())
+            x = np.array([fv], dtype=np.float64)
+            x = np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
             if scaler is not None:
-                X = scaler.transform(X)
-            prob = float(model.predict_proba(X)[:, 1][0])
+                x = scaler.transform(x)
+            prob = float(model.predict_proba(x)[:, 1][0])
             if calibrator is not None:
                 prob = float(calibrator.calibrate(np.array([prob]))[0])
         else:
             prob = 0.25
 
         # 4. Decision
-        decision = decision_engine.decide(sample_txn["transaction_id"], prob)
+        decision_engine.decide(sample_txn["transaction_id"], prob)
 
         elapsed_ms = (time.perf_counter() - start) * 1000
         latencies_ms.append(elapsed_ms)

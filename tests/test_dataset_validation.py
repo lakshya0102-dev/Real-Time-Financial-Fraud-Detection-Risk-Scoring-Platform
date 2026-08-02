@@ -10,40 +10,31 @@ These tests verify:
 
 from __future__ import annotations
 
-import hashlib
-import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
-# Add project root to path
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
-from src.config.settings import get_settings, DatasetConfig
+from src.config.settings import get_settings
 from src.data.dataset_validator import (
-    DatasetIntegrityError,
-    DatasetValidationReport,
     compute_sha256,
     validate_dataset,
 )
-from src.data.loader import DatasetNotFoundError, load_dataset, get_dataset_path
+from src.data.loader import DatasetNotFoundError, get_dataset_path, load_dataset
 from src.validation.leakage import (
     LeakageValidator,
     LeakageViolationError,
-    validate_no_leakage,
     filter_online_columns,
     get_safe_feature_columns,
+    validate_no_leakage,
 )
 from src.validation.schema import (
     OnlineTransaction,
-    TrainingEvent,
-    PredictionRequest,
     PredictionResponse,
+    TrainingEvent,
 )
-
 
 # ──────────────────────────────────────────────────────
 # Fixtures
@@ -308,9 +299,11 @@ class TestDatasetLoader:
         fake_settings = MagicMock()
         fake_settings.dataset.path = Path("/nonexistent/path/data.csv")
 
-        with patch("src.data.loader.get_settings", return_value=fake_settings):
-            with pytest.raises(DatasetNotFoundError):
-                load_dataset(nrows=1)
+        with (
+            patch("src.data.loader.get_settings", return_value=fake_settings),
+            pytest.raises(DatasetNotFoundError),
+        ):
+            load_dataset(nrows=1)
 
     @pytest.mark.integration
     def test_get_dataset_path(self):
@@ -398,25 +391,25 @@ class TestSchemaEnforcement:
     def test_online_transaction_rejects_true_fraud_label(self, sample_online_txn_data):
         """OnlineTransaction must reject true_fraud_label."""
         data = {**sample_online_txn_data, "true_fraud_label": 1}
-        with pytest.raises(Exception):  # Pydantic ValidationError (extra='forbid')
+        with pytest.raises(ValidationError):  # Pydantic ValidationError (extra='forbid')
             OnlineTransaction.model_validate(data)
 
     def test_online_transaction_rejects_fraud_scenario(self, sample_online_txn_data):
         """OnlineTransaction must reject fraud_scenario."""
         data = {**sample_online_txn_data, "fraud_scenario": "CARD_NOT_PRESENT"}
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             OnlineTransaction.model_validate(data)
 
     def test_online_transaction_rejects_observed_label(self, sample_online_txn_data):
         """OnlineTransaction must reject observed_label."""
         data = {**sample_online_txn_data, "observed_label": 0}
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             OnlineTransaction.model_validate(data)
 
     def test_online_transaction_rejects_label_timestamp(self, sample_online_txn_data):
         """OnlineTransaction must reject label_timestamp."""
         data = {**sample_online_txn_data, "label_timestamp": "2026-01-01"}
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             OnlineTransaction.model_validate(data)
 
     def test_online_transaction_accepts_valid_data(self, sample_online_txn_data):
@@ -447,7 +440,7 @@ class TestSchemaEnforcement:
 
     def test_prediction_response_rejects_invalid_probability(self):
         """fraud_probability must be between 0 and 1."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             PredictionResponse(
                 transaction_id="TXN_001",
                 fraud_probability=1.5,  # Invalid

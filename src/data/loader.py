@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 
@@ -41,8 +40,8 @@ class DatasetNotFoundError(FileNotFoundError):
 
 
 def load_dataset(
-    columns: Optional[list[str]] = None,
-    nrows: Optional[int] = None,
+    columns: list[str] | None = None,
+    nrows: int | None = None,
     parse_dates: bool = True,
     dtype_backend: str = "pyarrow",
 ) -> pd.DataFrame:

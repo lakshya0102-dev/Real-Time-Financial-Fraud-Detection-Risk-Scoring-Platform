@@ -16,10 +16,9 @@ from __future__ import annotations
 
 import json
 import logging
-import time
-from typing import Callable, Optional
+from collections.abc import Callable
 
-from src.config.settings import get_settings, KafkaConfig
+from src.config.settings import KafkaConfig, get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 class KafkaProducer:
     """Kafka producer for transaction events."""
 
-    def __init__(self, config: Optional[KafkaConfig] = None) -> None:
+    def __init__(self, config: KafkaConfig | None = None) -> None:
         self.config = config or get_settings().kafka
         self._producer = None
 
@@ -88,8 +87,8 @@ class KafkaConsumer:
     def __init__(
         self,
         topics: list[str],
-        group_id: Optional[str] = None,
-        config: Optional[KafkaConfig] = None,
+        group_id: str | None = None,
+        config: KafkaConfig | None = None,
     ) -> None:
         self.config = config or get_settings().kafka
         self.topics = topics
@@ -119,7 +118,7 @@ class KafkaConsumer:
     def consume(
         self,
         handler: Callable[[dict], None],
-        max_messages: Optional[int] = None,
+        max_messages: int | None = None,
     ) -> None:
         """Consume messages and process with handler."""
         if self._consumer is None:

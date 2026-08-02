@@ -17,28 +17,27 @@ from __future__ import annotations
 import logging
 import os
 import pickle
-import sys
 import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import Optional
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Request, Security, Depends
+from fastapi import Depends, FastAPI, HTTPException, Request, Security
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, PlainTextResponse
-
-# Add project root
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+from fastapi.responses import PlainTextResponse
+from fastapi.security import APIKeyHeader
 
 from src.config.settings import get_settings
 from src.features.pipeline import FeatureEngineer
+from src.monitoring.prometheus_metrics import (
+    get_metrics,
+    record_prediction,
+    set_api_up,
+    set_model_info,
+)
 from src.scoring.decision_engine import DecisionEngine
-from src.scoring.risk_scorer import RiskScorer
+from src.security.auth import audit_logger
 from src.validation.leakage import LeakageValidator
 from src.validation.schema import (
     BatchPredictionRequest,
@@ -46,14 +45,6 @@ from src.validation.schema import (
     PredictionRequest,
     PredictionResponse,
 )
-
-from src.monitoring.prometheus_metrics import (
-    get_metrics,
-    record_prediction,
-    set_api_up,
-    set_model_info,
-)
-from src.security.auth import audit_logger
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +66,7 @@ class ModelState:
         self.model_version: str = "unknown"
         self.feature_names: list[str] = []
         self.is_ready: bool = False
-        self.load_time: Optional[str] = None
+        self.load_time: str | None = None
 
     def load(self) -> None:
         """Load production model, calibrator, and scaler from artifacts."""
@@ -155,12 +146,10 @@ state = ModelState()
 # Auth
 # ──────────────────────────────────────────────────────
 
-from fastapi.security import APIKeyHeader
-
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
-async def verify_api_key(api_key: Optional[str] = Security(api_key_header)) -> str:
+async def verify_api_key(api_key: str | None = Security(api_key_header)) -> str:
     """Verify API key. In development, allow empty keys."""
     settings = get_settings()
     if settings.environment == "development":
@@ -286,17 +275,17 @@ async def predict(
         else:
             feature_values = list(features.values())
 
-        X = np.array([feature_values], dtype=np.float64)
+        x = np.array([feature_values], dtype=np.float64)
 
         # Replace NaN/Inf
-        X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+        x = np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
 
         # Apply scaler if loaded and model is not a Pipeline
         if state.scaler is not None and not hasattr(state.model, "named_steps"):
-            X = state.scaler.transform(X)
+            x = state.scaler.transform(x)
 
         # Predict
-        raw_prob = float(state.model.predict_proba(X)[:, 1][0])
+        raw_prob = float(state.model.predict_proba(x)[:, 1][0])
 
         # Calibrate
         if state.calibrator is not None:
@@ -341,7 +330,7 @@ async def predict(
 
     except Exception as e:
         logger.error("Prediction failed for %s: %s", request.transaction_id, e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/predict/batch", response_model=BatchPredictionResponse)

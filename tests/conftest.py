@@ -7,8 +7,8 @@ All unit tests should use these fixtures to avoid dataset dependency.
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import numpy as np
 import pandas as pd

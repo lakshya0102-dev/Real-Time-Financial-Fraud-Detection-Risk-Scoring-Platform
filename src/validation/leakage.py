@@ -15,7 +15,6 @@ The following columns are POST-EVENT and MUST NEVER be used as predictive featur
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 import pandas as pd
 
@@ -39,7 +38,7 @@ class LeakageViolationError(Exception):
 class LeakageValidator:
     """Validates that online inference data contains no post-event leakage."""
 
-    def __init__(self, forbidden_columns: Optional[list[str]] = None) -> None:
+    def __init__(self, forbidden_columns: list[str] | None = None) -> None:
         settings = get_settings()
         self.forbidden_columns = set(forbidden_columns or settings.leakage.forbidden_online_columns)
         self.excluded_features = set(settings.leakage.excluded_feature_columns)
@@ -121,7 +120,7 @@ class LeakageValidator:
 # Module-level convenience functions
 # ──────────────────────────────────────────────────────
 
-_validator: Optional[LeakageValidator] = None
+_validator: LeakageValidator | None = None
 
 
 def _get_validator() -> LeakageValidator:

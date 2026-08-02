@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 import pandas as pd
 
@@ -52,7 +51,7 @@ class TemporalSplit:
 def temporal_train_val_test_split(
     df: pd.DataFrame,
     timestamp_col: str = "event_timestamp",
-    config: Optional[object] = None,
+    config: object | None = None,
 ) -> TemporalSplit:
     """Split dataset chronologically into train/validation/test sets.
 

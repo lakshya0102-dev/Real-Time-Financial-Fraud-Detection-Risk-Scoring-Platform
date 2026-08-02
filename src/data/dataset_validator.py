@@ -22,11 +22,10 @@ import hashlib
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 
-from src.config.settings import get_settings, DatasetConfig
+from src.config.settings import DatasetConfig, get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +114,7 @@ def compute_sha256(filepath: Path) -> str:
 
 def validate_dataset(
     fail_fast: bool = True,
-    config: Optional[DatasetConfig] = None,
+    config: DatasetConfig | None = None,
 ) -> DatasetValidationReport:
     """Run all dataset integrity checks.
 

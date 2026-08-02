@@ -13,7 +13,6 @@ cannot support meaningful explanations, this module will report that clearly.
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 import numpy as np
 
@@ -30,7 +29,7 @@ class FraudExplainer:
     def __init__(self, model: object, feature_names: list[str]) -> None:
         self.model = model
         self.feature_names = feature_names
-        self._explainer: Optional[object] = None
+        self._explainer: object | None = None
         self._shap_available = False
         self._init_explainer()
 
@@ -65,13 +64,11 @@ class FraudExplainer:
             return ["Explainability unavailable (SHAP not loaded)"]
 
         try:
-            import shap
+            x = np.asarray(feature_values)
+            if x.ndim == 1:
+                x = x.reshape(1, -1)
 
-            X = np.asarray(feature_values)
-            if X.ndim == 1:
-                X = X.reshape(1, -1)
-
-            shap_values = self._explainer.shap_values(X)
+            shap_values = self._explainer.shap_values(x)
 
             # For binary classification, shap_values may be a list [class0, class1]
             if isinstance(shap_values, list):
@@ -100,13 +97,13 @@ class FraudExplainer:
 
     def global_feature_importance(
         self,
-        X: np.ndarray,
+        x: np.ndarray,
         max_samples: int = 1000,
     ) -> dict[str, float]:
         """Compute global feature importance via mean |SHAP|.
 
         Args:
-            X: Feature matrix (may be sampled for speed).
+            x: Feature matrix (may be sampled for speed).
             max_samples: Maximum rows to use for SHAP computation.
 
         Returns:
@@ -118,14 +115,14 @@ class FraudExplainer:
 
         try:
             # Sample if too large
-            if len(X) > max_samples:
+            if len(x) > max_samples:
                 rng = np.random.RandomState(42)
-                indices = rng.choice(len(X), max_samples, replace=False)
-                X_sample = X[indices]
+                indices = rng.choice(len(x), max_samples, replace=False)
+                x_sample = x[indices]
             else:
-                X_sample = X
+                x_sample = x
 
-            shap_values = self._explainer.shap_values(X_sample)
+            shap_values = self._explainer.shap_values(x_sample)
 
             if isinstance(shap_values, list):
                 sv = shap_values[1] if len(shap_values) > 1 else shap_values[0]

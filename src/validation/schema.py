@@ -15,9 +15,8 @@ The online model must NEVER receive:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 class OnlineTransaction(BaseModel):
@@ -193,8 +192,8 @@ class PredictionResponse(BaseModel):
     model_version: str
     feature_timestamp: str
     inference_latency_ms: float
-    explanations: Optional[list[str]] = None
-    request_id: Optional[str] = None
+    explanations: list[str] | None = None
+    request_id: str | None = None
 
 
 class BatchPredictionRequest(BaseModel):

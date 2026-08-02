@@ -13,11 +13,9 @@ from __future__ import annotations
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
-
 
 # ──────────────────────────────────────────────────────
 # Project Root Detection
@@ -260,7 +258,7 @@ class FeatureStoreConfig(BaseModel):
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_db: int = 0
-    redis_password: Optional[str] = None
+    redis_password: str | None = None
 
     # TTLs in seconds
     ttl_5m: int = 300
@@ -303,8 +301,8 @@ class MLflowConfig(BaseModel):
 
     tracking_uri: str = "http://localhost:5000"
     experiment_name: str = "fraud-detection"
-    registry_uri: Optional[str] = None
-    artifact_location: Optional[str] = None
+    registry_uri: str | None = None
+    artifact_location: str | None = None
 
 
 # ──────────────────────────────────────────────────────

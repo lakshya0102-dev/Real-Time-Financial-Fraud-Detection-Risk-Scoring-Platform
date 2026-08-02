@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -48,7 +47,8 @@ class PopulationDriftReport:
         ]
         for m in self.feature_metrics:
             lines.append(
-                f"  {m.feature_name:<35} | PSI: {m.psi:.4f} | JS: {m.js_divergence:.4f} | Status: {m.drift_status}"
+                f"  {m.feature_name:<35} | PSI: {m.psi:.4f} | JS: {m.js_divergence:.4f} "
+                f"| Status: {m.drift_status}"
             )
         lines.append("=" * 60)
         return "\n".join(lines)

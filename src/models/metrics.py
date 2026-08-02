@@ -13,24 +13,20 @@ Reports all metrics required for imbalanced fraud classification:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 import numpy as np
 from sklearn.metrics import (
     average_precision_score,
     brier_score_loss,
-    classification_report,
     confusion_matrix,
     f1_score,
-    precision_recall_curve,
     precision_score,
     recall_score,
     roc_auc_score,
-    roc_curve,
 )
 
-from src.config.settings import get_settings, CostConfig
+from src.config.settings import CostConfig, get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +87,7 @@ class FraudMetrics:
             f"FPR:              {self.false_positive_rate:.4f}",
             f"Brier Score:      {self.brier_score:.6f}",
             "-" * 60,
-            f"Confusion Matrix:",
+            "Confusion Matrix:",
             f"  TP: {self.true_positives:>8,}  |  FP: {self.false_positives:>8,}",
             f"  FN: {self.false_negatives:>8,}  |  TN: {self.true_negatives:>8,}",
             "-" * 60,
@@ -113,10 +109,10 @@ class FraudMetrics:
 def compute_fraud_metrics(
     y_true: np.ndarray,
     y_prob: np.ndarray,
-    y_pred: Optional[np.ndarray] = None,
+    y_pred: np.ndarray | None = None,
     threshold: float = 0.5,
-    amounts: Optional[np.ndarray] = None,
-    cost_config: Optional[CostConfig] = None,
+    amounts: np.ndarray | None = None,
+    cost_config: CostConfig | None = None,
 ) -> FraudMetrics:
     """Compute comprehensive fraud detection metrics.
 
@@ -218,8 +214,8 @@ def compute_fraud_metrics(
 def compute_metrics_at_thresholds(
     y_true: np.ndarray,
     y_prob: np.ndarray,
-    thresholds: Optional[list[float]] = None,
-    amounts: Optional[np.ndarray] = None,
+    thresholds: list[float] | None = None,
+    amounts: np.ndarray | None = None,
 ) -> list[FraudMetrics]:
     """Compute metrics at multiple thresholds for threshold optimization."""
     if thresholds is None:
@@ -234,7 +230,7 @@ def compute_metrics_at_thresholds(
 def compute_bootstrap_confidence_intervals(
     y_true: np.ndarray,
     y_prob: np.ndarray,
-    amounts: Optional[np.ndarray] = None,
+    amounts: np.ndarray | None = None,
     threshold: float = 0.5,
     n_bootstraps: int = 1000,
     seed: int = 42,

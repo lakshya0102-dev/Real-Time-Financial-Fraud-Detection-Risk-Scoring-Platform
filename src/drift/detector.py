@@ -15,12 +15,11 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 import numpy as np
 from scipy import stats
 
-from src.config.settings import get_settings, MonitoringConfig
+from src.config.settings import MonitoringConfig, get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +63,7 @@ class DriftReport:
 class DriftDetector:
     """Detects data drift between reference and current distributions."""
 
-    def __init__(self, config: Optional[MonitoringConfig] = None) -> None:
+    def __init__(self, config: MonitoringConfig | None = None) -> None:
         self.config = config or get_settings().monitoring
 
     def compute_psi(

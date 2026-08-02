@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
@@ -53,8 +52,8 @@ class DecisionEngine:
 
     def __init__(
         self,
-        risk_config: Optional[RiskScoringConfig] = None,
-        cost_config: Optional[CostConfig] = None,
+        risk_config: RiskScoringConfig | None = None,
+        cost_config: CostConfig | None = None,
     ) -> None:
         settings = get_settings()
         self.risk_config = risk_config or settings.risk_scoring
@@ -65,7 +64,7 @@ class DecisionEngine:
         self,
         transaction_id: str,
         fraud_probability: float,
-        explanations: Optional[list[str]] = None,
+        explanations: list[str] | None = None,
     ) -> TransactionDecision:
         """Make a decision for a single transaction.
 
@@ -102,7 +101,8 @@ class DecisionEngine:
     ) -> list[TransactionDecision]:
         """Make decisions for a batch of transactions."""
         return [
-            self.decide(tid, float(prob)) for tid, prob in zip(transaction_ids, fraud_probabilities)
+            self.decide(tid, float(prob))
+            for tid, prob in zip(transaction_ids, fraud_probabilities, strict=False)
         ]
 
 
@@ -127,7 +127,7 @@ class CostAnalysis:
 class ThresholdOptimizer:
     """Optimizes APPROVE/REVIEW/BLOCK thresholds against cost function."""
 
-    def __init__(self, cost_config: Optional[CostConfig] = None) -> None:
+    def __init__(self, cost_config: CostConfig | None = None) -> None:
         self.cost_config = cost_config or get_settings().cost
 
     def compute_cost(
@@ -136,7 +136,7 @@ class ThresholdOptimizer:
         y_prob: np.ndarray,
         approve_threshold: float,
         block_threshold: float,
-        amounts: Optional[np.ndarray] = None,
+        amounts: np.ndarray | None = None,
     ) -> CostAnalysis:
         """Compute business cost at given thresholds.
 
@@ -194,7 +194,7 @@ class ThresholdOptimizer:
         self,
         y_true: np.ndarray,
         y_prob: np.ndarray,
-        amounts: Optional[np.ndarray] = None,
+        amounts: np.ndarray | None = None,
         n_steps: int = 50,
     ) -> tuple[CostAnalysis, float, float]:
         """Find optimal APPROVE/BLOCK thresholds by maximizing net benefit.

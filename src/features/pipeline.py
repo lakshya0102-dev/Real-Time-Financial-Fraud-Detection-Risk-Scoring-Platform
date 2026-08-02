@@ -15,9 +15,8 @@ LEAKAGE PREVENTION:
 
 from __future__ import annotations
 
-from datetime import datetime
 import logging
-from typing import Optional
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -221,7 +220,7 @@ class FeatureEngineer:
         df: pd.DataFrame,
         entity_col: str,
         timestamp_col: str = "event_timestamp",
-        windows: Optional[list[str]] = None,
+        windows: list[str] | None = None,
     ) -> pd.DataFrame:
         """Generate velocity features for an entity using temporal-safe rolling windows.
 
@@ -259,7 +258,7 @@ class FeatureEngineer:
             count_series = pd.Series(0, index=df.index, dtype=np.int32)
             amount_series = pd.Series(0.0, index=df.index, dtype=np.float64)
 
-            for entity_val, group in grouped:
+            for _entity_val, group in grouped:
                 group_ts = ts.loc[group.index]
                 group_amounts = df.loc[group.index, "amount"]
 
@@ -310,10 +309,6 @@ class FeatureEngineer:
         )
 
         # Cumulative std deviation (excluding current row via shift)
-        # We use shift(1) on the expanding std to exclude current row
-        entity_std = (
-            df.groupby(entity_col)["amount"].expanding().std().reset_index(level=0, drop=True)
-        )
         # Shift within each group so row i gets std of rows [0..i-1]
         result[f"{entity_short}_std_amount"] = (
             df.groupby(entity_col)["amount"]
@@ -494,7 +489,7 @@ class FeatureEngineer:
         df: pd.DataFrame,
         include_velocity: bool = True,
         fast_mode: bool = True,
-        historical_df: Optional[pd.DataFrame] = None,
+        historical_df: pd.DataFrame | None = None,
     ) -> pd.DataFrame:
         """Generate all features for the dataset.
 

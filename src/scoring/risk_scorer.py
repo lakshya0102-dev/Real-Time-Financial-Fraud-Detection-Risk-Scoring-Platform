@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from src.config.settings import get_settings, RiskLevel, RiskScoringConfig
+from src.config.settings import RiskLevel, RiskScoringConfig, get_settings
 
 
 class RiskScorer:

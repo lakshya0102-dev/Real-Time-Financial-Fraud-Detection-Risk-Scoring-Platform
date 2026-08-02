@@ -11,11 +11,10 @@ from pathlib import Path
 
 import numpy as np
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
 from src.features.pipeline import FeatureEngineer
 from src.scoring.decision_engine import DecisionEngine
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 logging.basicConfig(
     level=logging.INFO,
@@ -195,15 +194,15 @@ def main() -> None:
         else:
             feature_values = list(features.values())
 
-        X = np.array([feature_values], dtype=np.float64)
-        X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+        x = np.array([feature_values], dtype=np.float64)
+        x = np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
 
         # Apply scaler if present and model is not a Pipeline
         if scaler is not None and not hasattr(model, "named_steps"):
-            X = scaler.transform(X)
+            x = scaler.transform(x)
 
         # Predict
-        raw_prob = float(model.predict_proba(X)[:, 1][0])
+        raw_prob = float(model.predict_proba(x)[:, 1][0])
 
         if calibrator is not None:
             cal_prob = float(calibrator.calibrate(np.array([raw_prob]))[0])

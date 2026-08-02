@@ -2,18 +2,11 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
-import numpy as np
 import pytest
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
 from sklearn.linear_model import LogisticRegression
-from src.features.pipeline import FeatureEngineer
+
 from src.calibration.calibrator import ProbabilityCalibrator
+from src.features.pipeline import FeatureEngineer
 from src.scoring.decision_engine import DecisionEngine, RiskScorer
 
 
@@ -27,13 +20,13 @@ class TestModelTrainingAndInference:
         features = engineer.generate_all_features(synthetic_transactions, include_velocity=False)
 
         y = synthetic_transactions["true_fraud_label"].values
-        X = features.values
+        x = features.values
 
         # 2. Fit Model
         model = LogisticRegression(max_iter=200)
-        model.fit(X, y)
+        model.fit(x, y)
 
-        raw_probs = model.predict_proba(X)[:, 1]
+        raw_probs = model.predict_proba(x)[:, 1]
         assert len(raw_probs) == len(synthetic_transactions)
         assert (raw_probs >= 0.0).all() and (raw_probs <= 1.0).all()
 
@@ -66,7 +59,6 @@ class TestArtifactBundle:
     def test_bundle_save_and_load(self, tmp_path, synthetic_transactions):
         from src.models.artifact_bundle import (
             ProductionArtifactBundle,
-            ArtifactIncompatibilityError,
         )
 
         engineer = FeatureEngineer()
@@ -74,14 +66,14 @@ class TestArtifactBundle:
         features = engineer.generate_all_features(synthetic_transactions, include_velocity=False)
         feature_names = list(features.columns)
 
-        X = features.values
+        x = features.values
         y = synthetic_transactions["true_fraud_label"].values
 
         model = LogisticRegression(max_iter=100)
-        model.fit(X, y)
+        model.fit(x, y)
 
         calibrator = ProbabilityCalibrator()
-        calibrator.fit_platt(y, model.predict_proba(X)[:, 1])
+        calibrator.fit_platt(y, model.predict_proba(x)[:, 1])
 
         bundle = ProductionArtifactBundle(
             model=model,
@@ -107,18 +99,18 @@ class TestArtifactBundle:
 
     def test_bundle_detects_feature_mismatch(self, synthetic_transactions):
         from src.models.artifact_bundle import (
-            ProductionArtifactBundle,
             ArtifactIncompatibilityError,
+            ProductionArtifactBundle,
         )
 
         engineer = FeatureEngineer()
         features = engineer.generate_all_features(synthetic_transactions, include_velocity=False)
         feature_names = list(features.columns)
-        X = features.values
+        x = features.values
         y = synthetic_transactions["true_fraud_label"].values
 
         model = LogisticRegression(max_iter=100)
-        model.fit(X, y)
+        model.fit(x, y)
 
         bundle = ProductionArtifactBundle(
             model=model,

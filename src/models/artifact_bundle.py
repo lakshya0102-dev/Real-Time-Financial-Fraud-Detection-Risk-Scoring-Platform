@@ -15,15 +15,12 @@ with incompatible components.
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import pickle
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
-
-import numpy as np
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +60,7 @@ class ProductionArtifactBundle:
 
     def verify_compatibility(
         self,
-        input_features: Optional[list[str]] = None,
+        input_features: list[str] | None = None,
         raise_on_error: bool = True,
     ) -> bool:
         """Verify that the bundle's internal components and optional input features match.
@@ -97,7 +94,9 @@ class ProductionArtifactBundle:
             elif input_features != self.feature_names:
                 mismatches = [
                     (i, inp, exp)
-                    for i, (inp, exp) in enumerate(zip(input_features, self.feature_names))
+                    for i, (inp, exp) in enumerate(
+                        zip(input_features, self.feature_names, strict=False)
+                    )
                     if inp != exp
                 ][:5]
                 errors.append(
@@ -142,7 +141,8 @@ class ProductionArtifactBundle:
 
         if not isinstance(bundle, cls):
             raise ArtifactIncompatibilityError(
-                f"File at {path} is not a valid ProductionArtifactBundle instance (got {type(bundle)})."
+                f"File at {path} is not a valid ProductionArtifactBundle "
+                f"instance (got {type(bundle)})."
             )
 
         if verify:

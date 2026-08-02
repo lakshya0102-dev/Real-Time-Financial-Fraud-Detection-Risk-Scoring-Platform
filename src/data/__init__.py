@@ -1,11 +1,11 @@
 """Data loading and dataset validation modules."""
 
-from src.data.loader import load_dataset, DatasetNotFoundError
 from src.data.dataset_validator import (
-    validate_dataset,
     DatasetIntegrityError,
     DatasetValidationReport,
+    validate_dataset,
 )
+from src.data.loader import DatasetNotFoundError, load_dataset
 
 __all__ = [
     "load_dataset",

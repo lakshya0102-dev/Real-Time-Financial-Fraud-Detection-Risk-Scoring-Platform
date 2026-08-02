@@ -15,7 +15,6 @@ Tracks:
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from prometheus_client import (
     Counter,
@@ -23,7 +22,6 @@ from prometheus_client import (
     Histogram,
     Info,
     generate_latest,
-    CONTENT_TYPE_LATEST,
 )
 
 logger = logging.getLogger(__name__)

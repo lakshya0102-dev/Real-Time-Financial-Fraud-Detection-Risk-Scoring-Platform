@@ -10,24 +10,18 @@ These are MANDATORY tests that verify:
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from datetime import datetime, timedelta
 
-import numpy as np
 import pandas as pd
 import pytest
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.features.pipeline import FeatureEngineer
 from src.validation.leakage import (
     LeakageValidator,
     LeakageViolationError,
-    validate_no_leakage,
     filter_online_columns,
     get_safe_feature_columns,
+    validate_no_leakage,
 )
 
 

@@ -12,12 +12,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
-from sklearn.calibration import CalibratedClassifierCV, calibration_curve
-from sklearn.linear_model import LogisticRegression
 from sklearn.isotonic import IsotonicRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss
 
 logger = logging.getLogger(__name__)
@@ -43,8 +41,8 @@ class ProbabilityCalibrator:
     """
 
     def __init__(self) -> None:
-        self._platt_model: Optional[LogisticRegression] = None
-        self._isotonic_model: Optional[IsotonicRegression] = None
+        self._platt_model: LogisticRegression | None = None
+        self._isotonic_model: IsotonicRegression | None = None
         self._active_method: str = "platt"
 
     def fit_platt(self, y_true: np.ndarray, y_prob: np.ndarray) -> None:
@@ -68,7 +66,7 @@ class ProbabilityCalibrator:
     def calibrate(
         self,
         y_prob: np.ndarray,
-        method: Optional[str] = None,
+        method: str | None = None,
     ) -> np.ndarray:
         """Calibrate probabilities using the fitted model.
 

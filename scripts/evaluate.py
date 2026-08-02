@@ -10,14 +10,12 @@ from pathlib import Path
 
 import numpy as np
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
-from src.config.settings import get_settings
 from src.data.loader import load_dataset
 from src.features.pipeline import FeatureEngineer
 from src.models.metrics import compute_fraud_metrics, compute_metrics_at_thresholds
 from src.models.temporal_split import temporal_train_val_test_split
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 logging.basicConfig(
     level=logging.INFO,
@@ -93,21 +91,18 @@ def main() -> None:
     # Align features
     if feature_names:
         available = [f for f in feature_names if f in test_features.columns]
-        X_test = test_features[available].values
+        x_test = test_features[available].values
     else:
-        X_test = test_features.values
+        x_test = test_features.values
 
     # Apply scaler if present and model is not a Pipeline
     if scaler is not None and not hasattr(model, "named_steps"):
-        X_test = scaler.transform(X_test)
+        x_test = scaler.transform(x_test)
 
     # Predict
-    y_prob = model.predict_proba(X_test)[:, 1]
+    y_prob = model.predict_proba(x_test)[:, 1]
 
-    if calibrator is not None:
-        y_prob_cal = calibrator.calibrate(y_prob)
-    else:
-        y_prob_cal = y_prob
+    y_prob_cal = calibrator.calibrate(y_prob) if calibrator is not None else y_prob
 
     # Metrics
     metrics = compute_fraud_metrics(y_test, y_prob_cal, amounts=test_amounts)

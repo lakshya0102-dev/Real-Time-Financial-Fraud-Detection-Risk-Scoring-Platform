@@ -14,14 +14,9 @@ Always retains the last known-good model.
 from __future__ import annotations
 
 import logging
-import pickle
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Optional
 
-import numpy as np
-
-from src.config.settings import get_settings, PromotionGateConfig
+from src.config.settings import PromotionGateConfig, get_settings
 from src.models.metrics import FraudMetrics
 
 logger = logging.getLogger(__name__)
@@ -52,7 +47,7 @@ class ModelPromotionValidator:
       - No data leakage
     """
 
-    def __init__(self, config: Optional[PromotionGateConfig] = None) -> None:
+    def __init__(self, config: PromotionGateConfig | None = None) -> None:
         self.config = config or get_settings().promotion_gates
 
     def evaluate(

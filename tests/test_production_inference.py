@@ -4,13 +4,12 @@ Tests:
   1. Loads production_bundle.pkl from disk
   2. Scores sample raw transaction through online feature extraction
   3. Validates return schema: fraud_probability, risk_score, decision, risk_level
-  4. Runs sub-process prediction test to prove 100% deterministic reproducibility across Python restarts
+  4. Runs sub-process prediction test to prove deterministic reproducibility
 """
 
 from __future__ import annotations
 
 import json
-import pickle
 import subprocess
 import sys
 from pathlib import Path
@@ -18,13 +17,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
 from src.features.pipeline import FeatureEngineer
 from src.models.artifact_bundle import ProductionArtifactBundle
 from src.scoring.decision_engine import DecisionEngine
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 SAMPLE_TXN = {
     "transaction_id": "TXN_AUDIT_DETERMINISTIC_001",
@@ -91,13 +88,13 @@ def run_single_inference(txn: dict) -> dict:
     features = engineer.generate_online_features(txn)
     feature_values = [features.get(f, 0) for f in bundle.feature_names]
 
-    X = np.array([feature_values], dtype=np.float64)
-    X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+    x = np.array([feature_values], dtype=np.float64)
+    x = np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
 
     if bundle.scaler is not None and not hasattr(bundle.model, "named_steps"):
-        X = bundle.scaler.transform(X)
+        x = bundle.scaler.transform(x)
 
-    raw_prob = float(bundle.model.predict_proba(X)[:, 1][0])
+    raw_prob = float(bundle.model.predict_proba(x)[:, 1][0])
     cal_prob = (
         float(bundle.calibrator.calibrate(np.array([raw_prob]))[0])
         if bundle.calibrator

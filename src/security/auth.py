@@ -10,14 +10,11 @@ Implements:
 
 from __future__ import annotations
 
-import hashlib
 import logging
 import os
-import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Optional
 
 from src.config.settings import get_settings
 
@@ -38,7 +35,7 @@ DEV_API_KEYS = {
 }
 
 
-def validate_api_key(api_key: str) -> Optional[dict]:
+def validate_api_key(api_key: str) -> dict | None:
     """Validate an API key and return associated metadata.
 
     In production, keys should be stored in a secure vault.
@@ -82,10 +79,10 @@ def generate_jwt(user_id: str, role: Role) -> str:
         return f"dev-token-{user_id}"
 
 
-def verify_jwt(token: str) -> Optional[dict]:
+def verify_jwt(token: str) -> dict | None:
     """Verify a JWT token and return payload."""
     try:
-        from jose import jwt, JWTError
+        from jose import jwt
 
         settings = get_settings()
         payload = jwt.decode(

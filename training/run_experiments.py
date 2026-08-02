@@ -19,7 +19,6 @@ from __future__ import annotations
 import json
 import logging
 import pickle
-import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,22 +26,18 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-
-# Add project root to path
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
-from src.config.settings import get_settings
+from src.calibration.calibrator import ProbabilityCalibrator
 from src.data.dataset_validator import validate_dataset
 from src.data.loader import load_dataset
 from src.features.pipeline import FeatureEngineer
 from src.models.metrics import compute_fraud_metrics
 from src.models.temporal_split import temporal_train_val_test_split
-from src.calibration.calibrator import ProbabilityCalibrator
 from src.scoring.decision_engine import ThresholdOptimizer
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 logging.basicConfig(
     level=logging.INFO,
@@ -166,23 +161,21 @@ def main() -> None:
         & set(eng_features_test.columns)
     )
 
-    X_basic_train = basic_features_train[common_basic].values
-    X_basic_val = basic_features_val[common_basic].values
-    X_basic_test = basic_features_test[common_basic].values
+    x_basic_train = basic_features_train[common_basic].values
+    x_basic_val = basic_features_val[common_basic].values
+    x_basic_test = basic_features_test[common_basic].values
 
-    X_eng_train = eng_features_train[common_eng].values
-    X_eng_val = eng_features_val[common_eng].values
-    X_eng_test = eng_features_test[common_eng].values
+    x_eng_train = eng_features_train[common_eng].values
+    x_eng_val = eng_features_val[common_eng].values
+    x_eng_test = eng_features_test[common_eng].values
 
     # Scale for Logistic Regression (fit on train only)
     scaler_basic = StandardScaler()
-    X_basic_train_scaled = scaler_basic.fit_transform(X_basic_train)
-    X_basic_val_scaled = scaler_basic.transform(X_basic_val)
-    X_basic_test_scaled = scaler_basic.transform(X_basic_test)
+    scaler_basic.fit(x_basic_train)
 
     # Scale for engineered features
     scaler_eng = StandardScaler()
-    scaler_eng.fit(X_eng_train)  # Fit only, used later if needed
+    scaler_eng.fit(x_eng_train)  # Fit only, used later if needed
 
     all_results: dict = {}
 
@@ -206,13 +199,12 @@ def main() -> None:
             ),
         ]
     )
-    lr.fit(X_basic_train, y_train)
+    lr.fit(x_basic_train, y_train)
 
-    lr_prob_val = lr.predict_proba(X_basic_val)[:, 1]
-    lr_prob_test = lr.predict_proba(X_basic_test)[:, 1]
+    lr_prob_val = lr.predict_proba(x_basic_val)[:, 1]
+    lr_prob_test = lr.predict_proba(x_basic_test)[:, 1]
 
     lr_metrics_val = compute_fraud_metrics(y_val, lr_prob_val, amounts=val_amounts)
-    lr_metrics_test = compute_fraud_metrics(y_test, lr_prob_test, amounts=test_amounts)
 
     logger.info("LR Val:\n%s", lr_metrics_val.summary())
     all_results["exp1_lr_basic"] = {
@@ -262,14 +254,14 @@ def main() -> None:
                 n_jobs=-1,
             )
             xgb_basic.fit(
-                X_basic_train,
+                x_basic_train,
                 y_train,
-                eval_set=[(X_basic_val, y_val)],
+                eval_set=[(x_basic_val, y_val)],
                 verbose=50,
             )
 
-            xgb_basic_prob_val = xgb_basic.predict_proba(X_basic_val)[:, 1]
-            xgb_basic_prob_test = xgb_basic.predict_proba(X_basic_test)[:, 1]
+            xgb_basic_prob_val = xgb_basic.predict_proba(x_basic_val)[:, 1]
+            xgb_basic_prob_test = xgb_basic.predict_proba(x_basic_test)[:, 1]
 
             xgb_basic_metrics = compute_fraud_metrics(
                 y_val, xgb_basic_prob_val, amounts=val_amounts
@@ -314,14 +306,14 @@ def main() -> None:
                 n_jobs=-1,
             )
             xgb_eng.fit(
-                X_eng_train,
+                x_eng_train,
                 y_train,
-                eval_set=[(X_eng_val, y_val)],
+                eval_set=[(x_eng_val, y_val)],
                 verbose=50,
             )
 
-            xgb_eng_prob_val = xgb_eng.predict_proba(X_eng_val)[:, 1]
-            xgb_eng_prob_test = xgb_eng.predict_proba(X_eng_test)[:, 1]
+            xgb_eng_prob_val = xgb_eng.predict_proba(x_eng_val)[:, 1]
+            xgb_eng_prob_test = xgb_eng.predict_proba(x_eng_test)[:, 1]
 
             xgb_eng_metrics = compute_fraud_metrics(y_val, xgb_eng_prob_val, amounts=val_amounts)
             logger.info("XGB Eng Val:\n%s", xgb_eng_metrics.summary())
@@ -363,9 +355,9 @@ def main() -> None:
                 verbose=-1,
             )
             lgb_model.fit(
-                X_eng_train,
+                x_eng_train,
                 y_train,
-                eval_set=[(X_eng_val, y_val)],
+                eval_set=[(x_eng_val, y_val)],
                 eval_metric="average_precision",
                 callbacks=[
                     lgb_module.early_stopping(stopping_rounds=50, verbose=False),
@@ -373,8 +365,8 @@ def main() -> None:
                 ],
             )
 
-            lgb_prob_val = lgb_model.predict_proba(X_eng_val)[:, 1]
-            lgb_prob_test = lgb_model.predict_proba(X_eng_test)[:, 1]
+            lgb_prob_val = lgb_model.predict_proba(x_eng_val)[:, 1]
+            lgb_prob_test = lgb_model.predict_proba(x_eng_test)[:, 1]
 
             lgb_metrics = compute_fraud_metrics(y_val, lgb_prob_val, amounts=val_amounts)
             logger.info("LGB Eng Val:\n%s", lgb_metrics.summary())
@@ -555,9 +547,9 @@ def main() -> None:
     try:
         from src.explainability.shap_explainer import FraudExplainer
 
-        X_for_shap = X_eng_val if best_features == "engineered" else X_basic_val
+        x_for_shap = x_eng_val if best_features == "engineered" else x_basic_val
         explainer = FraudExplainer(best_model, best_feature_list)
-        shap_importance = explainer.global_feature_importance(X_for_shap, max_samples=500)
+        shap_importance = explainer.global_feature_importance(x_for_shap, max_samples=500)
 
         # Save explainer
         save_artifact(explainer, artifacts_dir / "models" / "explainer.pkl")
