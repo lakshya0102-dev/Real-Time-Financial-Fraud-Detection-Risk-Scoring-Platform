@@ -1,0 +1,56 @@
+{
+    "dataset": {
+        "canonical_path": "data/CFR_data.csv",
+        "sha256": "89b2ca3e6791d124e1e739d965b62c95491ad80a67f5d1f77ce7cddd2dd25ad8",
+        "row_count": 999984,
+        "column_count": 54,
+        "file_size_bytes": 407822810,
+        "format": "CSV",
+        "encoding": "UTF-8",
+        "delimiter": ","
+    },
+    "schema_version": "1.0.0",
+    "target_column": "true_fraud_label",
+    "forbidden_online_columns": [
+        "true_fraud_label",
+        "fraud_scenario",
+        "observed_label",
+        "label_timestamp"
+    ],
+    "excluded_feature_columns": [
+        "is_outlier"
+    ],
+    "id_columns": [
+        "transaction_id",
+        "event_timestamp",
+        "transaction_sequence_id",
+        "event_version",
+        "customer_id",
+        "account_id",
+        "card_id",
+        "device_id",
+        "ip_id",
+        "merchant_id",
+        "terminal_id",
+        "branch_id"
+    ],
+    "distributions": {
+        "true_fraud_label": {"0": 995985, "1": 3999},
+        "observed_label": {"0": 986061, "1": 13923},
+        "is_outlier": {"0": 979984, "1": 20000}
+    },
+    "timestamp_range": {
+        "min": "2026-01-01T00:00:44.839570",
+        "max": "2026-06-29T23:52:14.420752"
+    },
+    "temporal_split": {
+        "train": {"start": "2026-01-01", "end": "2026-04-30"},
+        "validation": {"start": "2026-05-01", "end": "2026-05-31"},
+        "test": {"start": "2026-06-01", "end": "2026-06-29"}
+    },
+    "notes": [
+        "is_outlier rows contain ZERO fraud examples — do NOT use as a model feature",
+        "Fraud rate: ~0.4% — heavily imbalanced classification",
+        "observed_label contains more positives than true_fraud_label — includes false positives"
+    ]
+}

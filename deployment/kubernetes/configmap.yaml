@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fraud-api-config
+data:
+  FRAUD_ENVIRONMENT: "production"
+  FRAUD_FEATURE_STORE__REDIS_HOST: "redis-service"
+  FRAUD_KAFKA__BOOTSTRAP_SERVERS: "kafka-service:9092"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: fraud-api-secret
+type: Opaque
+data:
+  # Base64 encoded secret keys
+  FRAUD_API__JWT_SECRET_KEY: "Q0hBTkdFLU1FLUlOLVBST0RVQ1RJT04="

@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing & Linting
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Data (large files — never commit raw datasets)
+data/*.csv
+data/*.parquet
+data/*.feather
+!data/.gitkeep
+
+# Model artifacts & MLflow
+artifacts/
+models/*.pkl
+models/*.joblib
+*.pkl
+*.joblib
+mlruns/
+!artifacts/.gitkeep
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs & Databases
+*.log
+*.db
+*.sqlite3
+

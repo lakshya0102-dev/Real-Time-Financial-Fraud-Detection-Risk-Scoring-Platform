@@ -1,0 +1,13 @@
+{
+  "include": [
+    "src",
+    "training",
+    "inference",
+    "replay",
+    "tests",
+    "scripts"
+  ],
+  "extraPaths": [
+    "."
+  ]
+}
